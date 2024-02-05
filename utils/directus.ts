@@ -1,8 +1,7 @@
-import type { H3Event } from 'h3';
 import { createDirectus, rest, staticToken } from '@directus/sdk';
 
-export async function useDirectus(event: H3Event) {
-    const { directusUrl, directusToken } = useRuntimeConfig(event);
+export async function useDirectus() {
+    const { directusUrl, directusToken } = useRuntimeConfig(useEvent());
     const client = createDirectus(directusUrl).with(rest()).with(staticToken(directusToken));
 
     return client;
