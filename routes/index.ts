@@ -1,3 +1,4 @@
-export default eventHandler(() => {
-    return { nitro: 'Is Awesome!' }
+export default eventHandler((event) => {
+    const { mainRedirect } = useRuntimeConfig(event);
+    return sendRedirect(event, mainRedirect);
 })

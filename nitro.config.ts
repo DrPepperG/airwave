@@ -1,6 +1,8 @@
 //https://nitro.unjs.io/config
 export default defineNitroConfig({
     runtimeConfig: {
+        // Main Redirect
+        mainRedirect: "https://google.com",
         // OAuth
         clientId: "",
         clientSecret: "",
