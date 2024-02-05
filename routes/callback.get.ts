@@ -1,13 +1,5 @@
-import OAuthClient from 'intuit-oauth';
-
 export default eventHandler(async (event) => {
-    const { clientId, clientSecret, environment, redirectUri } = useRuntimeConfig(event)
-    const client = new OAuthClient({
-        clientId,
-        clientSecret,
-        environment,
-        redirectUri
-    })
+    const client = useOAuth(event);
 
     // Smart guys at intuit made us send the unparsed url string instead of an object
     const query = getRequestURL(event).search;
@@ -18,7 +10,6 @@ export default eventHandler(async (event) => {
         .catch((err) => {
             console.log(err)
         });
-
 
     return 'ok';
 })
