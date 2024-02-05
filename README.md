@@ -1,6 +1,5 @@
-# Nitro Minimal Starter
-
-Look at the [Nitro documentation](https://nitro.unjs.io/) to learn more.
+# Airwave
+Providing quickbooks sync to directus instance for easy custom reports and custom list management.
 
 ## Setup
 
