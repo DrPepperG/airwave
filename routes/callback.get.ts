@@ -12,7 +12,7 @@ export default eventHandler(async (event) => {
             storeToken(realmId, res.getJson())
         })
         .catch((err) => {
-            console.log(err);
+            console.error(err);
         });
 
     return sendRedirect(event, mainRedirect);

@@ -5,7 +5,7 @@ export async function useQuickbooks(realmId: string) {
         throw new Error('You must supply required parameters!');
     }
     const { clientId, clientSecret, debug, environment } = useRuntimeConfig(useEvent());
-    const token = await cachedAccessTokens(realmId);
+    const token = await useAuthToken(realmId);
 
     const isSandbox = (environment === 'sandbox');
     const qbo = new Quickbooks(

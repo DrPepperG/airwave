@@ -1,6 +1,18 @@
 import OAuthClient from 'intuit-oauth';
 import { deleteItem, readItems, updateItem } from '@directus/sdk';
 
+type Token = {
+    isCached: boolean,
+    realmId: string,
+    token_type: "bearer", // always bearer
+    access_token: string,
+    refresh_token: string,
+    expires_in: number,
+    x_refresh_token_expires_in: number,
+    latency: number,
+    createdAt: number
+}
+
 export async function useOAuth(realmId?: string) {
     const { clientId, clientSecret, environment, redirectUri } = useRuntimeConfig(useEvent());
     const client = new OAuthClient({
@@ -11,20 +23,35 @@ export async function useOAuth(realmId?: string) {
     });
 
     if (realmId) {
-        const token = await cachedAccessTokens(realmId);
+        const token = await useAuthToken(realmId);
         client.setToken(token);
     }
 
     return client;
 }
 
-export const cachedAccessTokens = defineCachedFunction(async (realmId: string) => {
+export async function useAuthToken(realmId: string): Promise<Token> {
+    if (!realmId) return null;
+
+    const token = await cachedAccessTokens(realmId);
+    const expiry = token.createdAt + (token.expires_in * 1000);
+    const isValid = ((expiry - token.latency) > Date.now());
+
+    if (!isValid) {
+        const refreshedToken = await refreshToken(realmId) 
+        return refreshedToken;
+    }
+    return token
+}
+
+export const cachedAccessTokens = defineCachedFunction(async (realmId: string): Promise<Token> => {
     const token = await refreshToken(realmId);
 
     if (!token) {
         return null;
     }
 
+    token.isCached = true;
     return token;
 }, {
     maxAge: 50 * 60,
@@ -62,12 +89,12 @@ async function getStoredToken(realmId: string) {
  * Get new access_token and store updated refresh_token in the database
  * @param realmId The customer id
  */
-async function refreshToken(realmId: string) {
+async function refreshToken(realmId: string): Promise<Token> {
     const storedToken = await getStoredToken(realmId);
 
-    const directus = await useDirectus();
+    const oauth = await useOAuth();
 
-    const oauth = await useOAuth()
+    const directus = await useDirectus();
     const token = await oauth
         .refreshUsingToken(storedToken.refresh_token)
         .then((res) => {
@@ -93,5 +120,8 @@ async function refreshToken(realmId: string) {
         expires_at: new Date(d.getTime() + (token.x_refresh_token_expires_in * 1000)).toISOString()
     }));
 
-    return token;
+    return {
+        isCached: false,
+        ...token
+    };
 }
