@@ -43,7 +43,7 @@ type WebhookEntity = {
     deletedID?: string
 }
 
-type WebhookResponse = {
+export type WebhookResponse = {
     eventNotifications: {
         realmId: string,
         dataChangeEvent: {
@@ -54,20 +54,21 @@ type WebhookResponse = {
 // #endregion
 
 export default eventHandler(async (event) => {
-    const body = await readBody(event);
+    const payload: WebhookResponse = await readBody(event);
 
+    const { verifyToken } = useRuntimeConfig(event);
     const validSignature = new VerifySignature()
-        .isRequestValid(getHeaders(event), body, useRuntimeConfig(event).verifyToken);
+        .isRequestValid(getHeaders(event), payload, verifyToken);
     if (!validSignature) {
         return setResponseStatus(event, 401);
     }
 
     // Do not wait for this to finish, we need to respond to the intuit server
-    handleWebhook(event);
+    handleWebhook(event, payload);
 
     return setResponseStatus(event, 200);
 })
 
-function handleWebhook(event: H3Event<EventHandlerRequest>) {
-    // start
+async function handleWebhook(event: H3Event<EventHandlerRequest>, payload: WebhookResponse) {
+    console.log(event, payload.eventNotifications);
 }

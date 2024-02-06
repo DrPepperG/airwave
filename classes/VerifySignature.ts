@@ -1,11 +1,12 @@
 import type { RequestHeaders } from 'h3';
+import type { WebhookResponse } from '../routes/webhook.post';
 import * as crypto from 'node:crypto';
 
 export class VerifySignature {
     private static readonly SIGNATURE = 'intuit-signature';
     private static readonly ALGORITHM = 'sha256';
 
-    public isRequestValid(headers: RequestHeaders, payload: string, verifier: string): boolean {
+    public isRequestValid(headers: RequestHeaders, payload: WebhookResponse, verifier: string): boolean {
         const signature = headers[VerifySignature.SIGNATURE];
         if (!signature) {
             return false;
