@@ -1,5 +1,5 @@
 export default eventHandler(async (event) => {
-    const client = useOAuth();
+    const client = await useOAuth();
 
     // Smart guys at intuit made us send the unparsed url string instead of an object
     const query = getRequestURL(event).search;
@@ -8,7 +8,7 @@ export default eventHandler(async (event) => {
             console.log('The Token is  ' + JSON.stringify(res.getJson()));
         })
         .catch((err) => {
-            console.log(err)
+            console.log(err);
         });
 
     return 'ok';
