@@ -7,15 +7,15 @@ export default eventHandler(async (event) => {
     // Smart guys at intuit made us send the unparsed url string instead of an object
     const query = getRequestURL(event).search;
     const realmId = getQuery(event).realmId as string
-    client.createToken(query)
+    return client.createToken(query)
         .then((res) => {
             storeToken(realmId, res.getJson())
+            return sendRedirect(event, mainRedirect);
         })
         .catch((err) => {
             console.error(err);
+            return setResponseStatus(event, 409)
         });
-
-    return sendRedirect(event, mainRedirect);
 })
 
 async function storeToken(realmId: string, token: {

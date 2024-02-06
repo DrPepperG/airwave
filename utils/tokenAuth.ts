@@ -37,6 +37,7 @@ export async function useAuthToken(realmId: string): Promise<Token> {
     const expiry = token.createdAt + (token.expires_in * 1000);
     const isValid = ((expiry - token.latency) > Date.now());
 
+    // Cache should expire before it becomes invalid but just incase
     if (!isValid) {
         const refreshedToken = await refreshToken(realmId) 
         return refreshedToken;
@@ -120,6 +121,7 @@ async function refreshToken(realmId: string): Promise<Token> {
         expires_at: new Date(d.getTime() + (token.x_refresh_token_expires_in * 1000)).toISOString()
     }));
 
+    token.realmId = realmId; // Make sure we have the correct id, terrible libraries intuit has released
     return {
         isCached: false,
         ...token
