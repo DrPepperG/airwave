@@ -1,8 +1,9 @@
 //https://nitro.unjs.io/config
 export default defineNitroConfig({
     runtimeConfig: {
-        // App Key
+        // App
         appKey: "",
+        debug: false,
         // Main Redirect
         mainRedirect: "https://google.com",
         // OAuth

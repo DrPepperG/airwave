@@ -1,5 +1,5 @@
 import OAuthClient from 'intuit-oauth';
-import { readItems, updateItem } from '@directus/sdk';
+import { deleteItem, readItems, updateItem } from '@directus/sdk';
 
 export async function useOAuth(realmId?: string) {
     const { clientId, clientSecret, environment, redirectUri } = useRuntimeConfig(useEvent());
@@ -19,6 +19,25 @@ export async function useOAuth(realmId?: string) {
 }
 
 export const cachedAccessTokens = defineCachedFunction(async (realmId: string) => {
+    const token = await refreshToken(realmId);
+
+    if (!token) {
+        return null;
+    }
+
+    return token;
+}, {
+    maxAge: 50 * 60,
+    name: 'accessTokens',
+    swr: false, // DO NOT RETURN STALE TOKENS!!! (stale-while-revalidate)
+});
+
+/**
+ * Grab token that is stored in the database
+ * @param realmId The customer id
+ * @returns storedToken
+ */
+async function getStoredToken(realmId: string) {
     const directus = await useDirectus();
     const storedToken = await directus.request(readItems('quickbooks_oauth',{ 
         'filter': {
@@ -34,11 +53,39 @@ export const cachedAccessTokens = defineCachedFunction(async (realmId: string) =
         return token
     });
 
+    if (!storedToken) return null;
+
+    return storedToken;
+}
+
+/**
+ * Get new access_token and store updated refresh_token in the database
+ * @param realmId The customer id
+ */
+async function refreshToken(realmId: string) {
+    const storedToken = await getStoredToken(realmId);
+
+    const directus = await useDirectus();
+
     const oauth = await useOAuth()
-    const token = await oauth.refreshUsingToken(storedToken.refresh_token)
+    const token = await oauth
+        .refreshUsingToken(storedToken.refresh_token)
         .then((res) => {
             return res.token;
+        })
+        .catch(async (err) => {
+            if (err.error !== 'invalid_grant') {
+                console.error(err);
+                return;
+            }; 
+
+            // Delete invalid oauth token from database
+            await directus.request(deleteItem('quickbooks_oauth', storedToken.id));
         });
+
+    if (!token) {
+        return null;
+    }
 
     const d = new Date();
     directus.request(updateItem('quickbooks_oauth', storedToken.id, {
@@ -47,7 +94,4 @@ export const cachedAccessTokens = defineCachedFunction(async (realmId: string) =
     }));
 
     return token;
-}, {
-    maxAge: 50 * 60,
-    name: 'accessTokens'
-});
+}
