@@ -5,7 +5,7 @@ export default eventHandler(async (event) => {
     const query = getRequestURL(event).search;
     client.createToken(query)
         .then((res) => {
-            console.log(res);
+            console.log('The Token is  ' + JSON.stringify(res.getJson()));
         })
         .catch((err) => {
             console.log(err)
