@@ -34,7 +34,7 @@ type WebhookType =
   | "Currency"
   | "JournalCode";
 
-type OperationType = "Create" | "Update" | "Merge" | "Remove";
+export type OperationType = "Create" | "Update" | "Merge" | "Remove";
 
 export type WebhookEntity = {
     name: WebhookType,
@@ -92,8 +92,8 @@ async function handleWebhook(event: H3Event<EventHandlerRequest>, notification: 
     for (const entity of Object.values(entities)) {
         switch(entity.name) {
             case 'Customer':
-                new CustomerManager(event, entity, realmId)
-                    .handle()
+                new CustomerManager(realmId)
+                    .handle(entity.id, entity.operation)
                 break;
             default:
                 console.log(`Unhandled webhook event`, event, notification, realmId)

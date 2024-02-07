@@ -1,10 +1,5 @@
-import type { H3Event, EventHandlerRequest } from 'h3';
-import type { WebhookEntity } from '../routes/webhook.post';
-
 export class BaseManager {
-    constructor(event: H3Event<EventHandlerRequest>, entity: WebhookEntity, realmId: string) {
-        this.event = event;
-        this.entity = entity;
+    constructor(realmId: string) {
         this.realmId = realmId;
 
     }
@@ -12,16 +7,6 @@ export class BaseManager {
     public async init() {
         this.qbo = await useQuickbooks(this.realmId);
     }
-
-    /**
-     * Webhook http event
-     */
-    public event: H3Event<EventHandlerRequest>;
-
-    /**
-     * Entity sent from webhook
-     */
-    public entity: WebhookEntity;
 
     /**
      * Company ID

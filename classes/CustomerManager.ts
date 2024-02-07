@@ -1,5 +1,4 @@
-import type { H3Event, EventHandlerRequest } from 'h3';
-import type { WebhookEntity } from '../routes/webhook.post';
+import type { OperationType } from '../routes/webhook.post';
 import { BaseManager } from "./BaseManager";
 import { createItem, updateItem } from '@directus/sdk';
 
@@ -104,20 +103,19 @@ type DatabaseCustomer = {
 // #endregion
 
 export class CustomerManager extends BaseManager {
-    constructor(event: H3Event<EventHandlerRequest>, entity: WebhookEntity, realmId: string) {
-        super(event, entity, realmId)
+    constructor(realmId: string) {
+        super(realmId)
     }
 
-    public async handle() {
+    public async handle(customerId: string, operation: OperationType) {
         await this.init();
 
         const qbo = this.qbo;
-        const entity = this.entity;
         const realmId = this.realmId;
 
         // We get the customer from quickbooks no matter what, webhook doesn't send anything
         const customer = await new Promise<Customer>((resolve, reject) => {
-            qbo.getCustomer(entity.id, (err, customer: Customer) => {
+            qbo.getCustomer(customerId, (err, customer: Customer) => {
                 if (err) return reject(err);
                 return resolve(customer);
             })
@@ -156,9 +154,7 @@ export class CustomerManager extends BaseManager {
             sales_tax_id: customer.DefaultTaxCodeRef ? customer.DefaultTaxCodeRef.value : null
         }
 
-        console.log(databaseCustomer, customer);
-
-        switch(this.entity.operation) {
+        switch(operation) {
             case 'Create':
                 await this.create(databaseCustomer, realmId);
                 break;
