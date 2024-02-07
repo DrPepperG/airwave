@@ -27,8 +27,9 @@ export class CustomerManager extends BaseManager {
                 if (err) return reject(err);
                 return resolve(customer);
             })
-        })
+        }).catch(console.error);
+        if (!customer) return;
 
-        console.log(customer)
+        console.log(customer, 'ddd')
     }
 }
