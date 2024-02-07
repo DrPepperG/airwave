@@ -22,8 +22,13 @@ export class CustomerManager extends BaseManager {
         const qbo = this.qbo;
         const entity = this.entity;
 
-        qbo.getCustomer(entity.id, (err, customer) => {
-            console.log(customer);
+        const customer = await new Promise((resolve, reject) => {
+            qbo.getCustomer(entity.id, (err, customer) => {
+                if (err) return reject(err);
+                return resolve(customer);
+            })
         })
+
+        console.log(customer)
     }
 }
