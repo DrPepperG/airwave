@@ -5,43 +5,101 @@ import { createItem, updateItem } from '@directus/sdk';
 
 // #region Types
 type Customer = {
-    PrimaryEmailAddr: {
-        Address: string,
-    },
-    SyncToken: string,
-    domain: string,
-    GivenName: string,
-    DisplayName: string;
-    BillWithParent: boolean,
-    FullyQualifiedName: string,
-    CompanyName: string,
-    FamilyName: string,
-    sparse: boolean,
-    PrimaryPhone: {
-        FreeFormNumber: string,
-    },
     Active: boolean,
-    Job: boolean,
+    AlternatePhone?: {
+        FreeFormNumber: string,
+    }
+    Balance: number,
     BalanceWithJobs: number,
     BillAddr: {
         City: string,
-        Line1: string,
-        PostalCode: string,
-        Lat: string,
-        Long: string,
         CountrySubDivisionCode: string,
         Id: string,
+        Lat: string,
+        Line1: string,
+        Line2?: string,
+        Long: string,
+        PostalCode: string,
     },
-    PreferredDeliveryMethod: string,
-    Taxable: boolean,
-    PrintOnCheckName: string,
-    Balance: number,
+    BillWithParent: boolean,
+    CompanyName: string,
+    DefaultTaxCodeRef: {
+        value: string,
+    },
+    DisplayName: string;
+    domain: string,
+    FamilyName: string,
+    FullyQualifiedName: string,
+    GivenName: string,
     Id: string,
+    Job: boolean,
+    Level?: number,
     MetaData: {
         CreateTime: string,
         LastUpdatedTime: string,
     },
-    Notes: string
+    MiddleName?: string,
+    Mobile?: {
+        FreeFormNumber: string,
+    },
+    Notes: string,
+    ParentRef: {
+        value: string,
+    },
+    PreferredDeliveryMethod: string,
+    PrimaryEmailAddr: {
+        Address: string,
+    },
+    PrimaryPhone: {
+        FreeFormNumber: string,
+    },
+    PrintOnCheckName: string,
+    ShipAddr: {
+        City: string,
+        CountrySubDivisionCode: string,
+        Id: string,
+        Lat: string,
+        Line1: string,
+        Line2?: string,
+        Long: string,
+        PostalCode: string,
+    }
+    Sparse: boolean,
+    SyncToken: string,
+    Taxable: boolean,
+}
+
+type DatabaseCustomer = {
+    active: boolean,
+    // ID
+    quickbooks_id: string,
+    // Name
+    display_name: string,
+    first_name: string,
+    middle_name?: string,
+    last_name: string,
+    // Sub customer?
+    parent_id?: string,
+    level: number,
+    // Email and phone
+    primary_email?: string,
+    primary_phone?: string,
+    mobile_phone?: string,
+    alt_phone?: string,
+    // Address
+    bill_address_line1: string,
+    bill_address_line2?: string,
+    bill_city: string,
+    bill_zipcode: string,
+    bill_state: string,
+    // Ship address
+    ship_address_line1: string,
+    ship_address_line2?: string,
+    ship_city: string,
+    ship_zipcode: string,
+    ship_state: string,
+    // Sales tax
+    sales_tax_id: string,
 }
 // #endregion
 
@@ -66,12 +124,46 @@ export class CustomerManager extends BaseManager {
         }).catch(console.error);
         if (!customer) return;
 
+        const databaseCustomer: DatabaseCustomer = {
+            active: customer.Active,
+            quickbooks_id: customer.Id,
+            // Name
+            display_name: customer.DisplayName,
+            first_name: customer.GivenName,
+            middle_name: customer.MiddleName,
+            last_name: customer.FamilyName,
+            // Sub customer?
+            parent_id: customer.ParentRef ? customer.ParentRef.value : null,
+            level: customer.Level,
+            // Email and phone
+            primary_email: customer.PrimaryEmailAddr ? customer.PrimaryEmailAddr.Address : null,
+            primary_phone: customer.PrimaryPhone ? customer.PrimaryPhone.FreeFormNumber : null,
+            alt_phone: customer.AlternatePhone ? customer.AlternatePhone.FreeFormNumber : null,
+            mobile_phone: customer.Mobile ? customer.Mobile.FreeFormNumber : null,
+            // Address
+            bill_address_line1: customer.BillAddr.Line1,
+            bill_address_line2: customer.BillAddr.Line2,
+            bill_city: customer.BillAddr.City,
+            bill_zipcode: customer.BillAddr.PostalCode,
+            bill_state: customer.BillAddr.CountrySubDivisionCode,
+            // Shipping address
+            ship_address_line1: customer.BillAddr.Line1,
+            ship_address_line2: customer.BillAddr.Line2,
+            ship_city: customer.BillAddr.City,
+            ship_zipcode: customer.BillAddr.PostalCode,
+            ship_state: customer.BillAddr.CountrySubDivisionCode,
+            // Sales tax,
+            sales_tax_id: customer.DefaultTaxCodeRef ? customer.DefaultTaxCodeRef.value : null
+        }
+
+        console.log(databaseCustomer, customer);
+
         switch(this.entity.operation) {
             case 'Create':
-                await this.create(customer, realmId);
+                await this.create(databaseCustomer, realmId);
                 break;
             case 'Update':
-                await this.update(customer, realmId);
+                await this.update(databaseCustomer, realmId);
                 break;
         }
     }
@@ -79,25 +171,22 @@ export class CustomerManager extends BaseManager {
     /**
      * Create the customer in our database
      */
-    private async create(customer: Customer, realmId: string) {
+    private async create(databaseCustomer: DatabaseCustomer, realmId: string) {
         const directus = await useDirectus();
 
-        await directus.request(createItem('customers', {
-            quickbooks_id: customer.Id
-        }))
+        await directus.request(createItem('customers', databaseCustomer))
     }
 
     /**
      * Update the customer in our database
      */
-    private async update(customer: Customer, realmId: string) {
+    private async update(databaseCustomer: DatabaseCustomer, realmId: string) {
         const directus = await useDirectus();
 
-        await directus.request(updateItem('customers', customer.Id, {
-            //
-        })).catch((reason) => {
-            if (reason.response.status !== 403) return; // We get a 403 if the object doesn't exist
-            this.create(customer, realmId);
-        })
+        await directus.request(updateItem('customers', databaseCustomer.quickbooks_id, databaseCustomer))
+            .catch((reason) => {
+                if (reason.response.status !== 403) return; // We get a 403 if the object doesn't exist
+                this.create(databaseCustomer, realmId);
+            })
     }
 }
