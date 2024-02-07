@@ -1,41 +1,27 @@
 # Airwave
-Providing quickbooks sync to directus instance for easy custom reports and custom list management.
+This project aims to provide a sync between a ![Directus](https://directus.io) managed database and ![Quickbooks Online](https://quickbooks.intuit.com/). Most offerings cost way too much or are severly bloated from terrible programming.
 
-## Setup
+# Features
+- Encryption of stored tokens
+- OAuth2 handling
+- Webhook endpoint with validation key
+- Customer data sync
 
-Make sure to install the dependencies:
-
-```bash
-# npm
-npm install
-
-# yarn
-yarn install
-
-# pnpm
-pnpm install
+# Environment
 ```
-
-## Development Server
-
-Start the development server on <http://localhost:3000>
-
-```bash
-npm run dev
+# App
+NITRO_APP_KEY="" # 32 character limit
+NITRO_DEBUG=false
+# Main Redirect
+NITRO_MAIN_REDIRECT="" # Your main website
+# OAuth
+NITRO_CLIENT_ID="" # Intuit app id
+NITRO_CLIENT_SECRET="" # Intuit app key
+NITRO_REDIRECT_URI="" # Path to callback endpoint
+NITRO_COMPANY_ID="" # Optional: Restricts application to one company
+# Webhook
+NITRO_VERIFY_TOKEN="" # Intuit provided webhook verification token
+# Directus
+NITRO_DIRECTUS_URL="" # URL of Directus instance
+NITRO_DIRECTUS_TOKEN="" # API token for Directus instance
 ```
-
-## Production
-
-Build the application for production:
-
-```bash
-npm run build
-```
-
-Locally preview production build:
-
-```bash
-npm run preview
-```
-
-Check out the [deployment documentation](https://nitro.unjs.io/deploy) for more information.
