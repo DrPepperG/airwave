@@ -8,6 +8,22 @@ export class CustomerManager extends BaseManager {
         super(event, entity, realmId)
     }
 
-    public handle() {
+    public async handle() {
+        await this.init();
+
+        switch(this.entity.operation) {
+            case 'Update':
+                this.update();
+                break;
+        }
+    }
+
+    private async update() {
+        const qbo = this.qbo;
+        const entity = this.entity;
+
+        qbo.getCustomer(entity.id, (err, customer) => {
+            console.log(customer);
+        })
     }
 }

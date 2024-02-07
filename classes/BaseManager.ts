@@ -6,6 +6,11 @@ export class BaseManager {
         this.event = event;
         this.entity = entity;
         this.realmId = realmId;
+
+    }
+
+    public async init() {
+        this.qbo = await useQuickbooks(this.realmId);
     }
 
     /**
@@ -22,4 +27,9 @@ export class BaseManager {
      * Company ID
      */
     public realmId: string;
+
+    /**
+     * Instance of quickbooks manager
+     */
+    public qbo: any;
 }

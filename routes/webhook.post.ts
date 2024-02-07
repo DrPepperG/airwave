@@ -87,10 +87,13 @@ async function handleWebhook(event: H3Event<EventHandlerRequest>, notification: 
     const realmId = notification.realmId
     const entities = notification.dataChangeEvent.entities
 
+    // Need to sort ents based on date
+
     for (const entity of Object.values(entities)) {
         switch(entity.name) {
             case 'Customer':
-                new CustomerManager(event, entity, realmId).handle()
+                new CustomerManager(event, entity, realmId)
+                    .handle()
                 break;
             default:
                 console.log(`Unhandled webhook event`, event, notification, realmId)
