@@ -11,6 +11,7 @@ export default defineNitroConfig({
         clientSecret: "",
         environment: "sandbox",
         redirectUri: "",
+        companyId: "", // Used if we want to limit the app to a specific company
         // Webhook
         verifyToken: "",
         // Directus

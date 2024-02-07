@@ -1,12 +1,18 @@
 import { createItem } from "@directus/sdk";
 
 export default eventHandler(async (event) => {
-    const { mainRedirect } = useRuntimeConfig(event);
+    const { companyId, mainRedirect } = useRuntimeConfig(event);
     const client = await useOAuth();
 
     // Smart guys at intuit made us send the unparsed url string instead of an object
     const query = getRequestURL(event).search;
     const realmId = getQuery(event).realmId as string
+
+    // If we have a companyId defined deny any other companies from connecting to our app
+    if (companyId && (realmId != companyId)) {
+        return setResponseStatus(event, 403, `This application is limited to defined companies.`)
+    }
+
     return client.createToken(query)
         .then((res) => {
             storeToken(realmId, res.getJson())
