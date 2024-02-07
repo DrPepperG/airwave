@@ -13,6 +13,21 @@ type Token = {
     createdAt: number
 }
 
+export async function useAuthToken(realmId: string): Promise<Token> {
+    if (!realmId) return null;
+
+    const token = await cachedAccessTokens(realmId);
+    const expiry = token.createdAt + (token.expires_in * 1000);
+    const isValid = ((expiry - token.latency) > Date.now());
+
+    // Cache should expire before it becomes invalid but just incase
+    if (!isValid) {
+        const refreshedToken = await refreshToken(realmId) 
+        return refreshedToken;
+    }
+    return token
+}
+
 export async function useOAuth(realmId?: string) {
     const { clientId, clientSecret, environment, redirectUri } = useRuntimeConfig(useEvent());
     const client = new OAuthClient({
@@ -28,21 +43,6 @@ export async function useOAuth(realmId?: string) {
     }
 
     return client;
-}
-
-export async function useAuthToken(realmId: string): Promise<Token> {
-    if (!realmId) return null;
-
-    const token = await cachedAccessTokens(realmId);
-    const expiry = token.createdAt + (token.expires_in * 1000);
-    const isValid = ((expiry - token.latency) > Date.now());
-
-    // Cache should expire before it becomes invalid but just incase
-    if (!isValid) {
-        const refreshedToken = await refreshToken(realmId) 
-        return refreshedToken;
-    }
-    return token
 }
 
 export const cachedAccessTokens = defineCachedFunction(async (realmId: string): Promise<Token> => {
