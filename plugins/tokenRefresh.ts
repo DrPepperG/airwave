@@ -49,5 +49,8 @@ async function refreshTokens() {
             refresh_token: encrypt(newToken.refresh_token),
             expires_at: new Date(d.getTime() + (newToken.x_refresh_token_expires_in * 1000)).toISOString()
         }));
+
+        // Clear item from cache
+        await useStorage().removeItem(`cache:nitro:functions:accessTokens:${databaseToken.realm_id}.json`);
     }
 }

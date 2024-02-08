@@ -58,6 +58,9 @@ export const cachedAccessTokens = defineCachedFunction(async (realmId: string): 
     maxAge: 50 * 60,
     name: 'accessTokens',
     swr: false, // DO NOT RETURN STALE TOKENS!!! (stale-while-revalidate)
+    getKey: (realmId) => {
+        return realmId
+    }
 });
 
 /**
@@ -100,7 +103,7 @@ async function refreshToken(realmId: string): Promise<Token> {
             }; 
 
             // Delete invalid oauth token from database
-            await directus.request(deleteItem('quickbooks_oauth', storedToken.id));
+            await directus.request(deleteItem('quickbooks_oauth', realmId));
         });
 
     if (!token) {
