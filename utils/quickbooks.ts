@@ -4,7 +4,7 @@ export async function useQuickbooks(realmId: string) {
     if (!realmId) { 
         throw new Error('You must supply required parameters!');
     }
-    const { clientId, clientSecret, debug, environment } = useRuntimeConfig(useEvent());
+    const { clientId, clientSecret, debug, environment } = useRuntimeConfig();
     const token = await useAuthToken(realmId);
 
     const isSandbox = (environment === 'sandbox');

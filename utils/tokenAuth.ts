@@ -29,7 +29,7 @@ export async function useAuthToken(realmId: string): Promise<Token> {
 }
 
 export async function useOAuth(realmId?: string) {
-    const { clientId, clientSecret, environment, redirectUri } = useRuntimeConfig(useEvent());
+    const { clientId, clientSecret, environment, redirectUri } = useRuntimeConfig();
     const client = new OAuthClient({
         clientId,
         clientSecret,

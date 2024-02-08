@@ -1,7 +1,5 @@
-import { createDirectus, readItems, rest, staticToken, updateItem } from '@directus/sdk';
-import OAuthClient from 'intuit-oauth';
+import { readItems, updateItem } from '@directus/sdk';
 import cron from 'node-cron';
-import { decrypt, encrypt } from '../utils/encrypt';
 
 // Every day at 12am we will query our database to update any tokens
 export default defineNitroPlugin(() => {
@@ -16,11 +14,7 @@ export default defineNitroPlugin(() => {
  * Might as well make use of that new token for security.
  */
 async function refreshTokens() {
-    const { clientId, clientSecret, directusUrl, directusToken, environment, redirectUri } = useRuntimeConfig();
-
-    const directus = createDirectus(directusUrl)
-        .with(rest())
-        .with(staticToken(directusToken));
+    const directus = await useDirectus();
     
     const tokens = await directus.request(readItems('quickbooks_oauth'))
         .then((res) => {
@@ -29,12 +23,7 @@ async function refreshTokens() {
         .catch(console.error);
     if (!tokens) return;
 
-    const oauth = new OAuthClient({
-        clientId,
-        clientSecret,
-        environment,
-        redirectUri
-    });
+    const oauth = await useOAuth();
 
     for (const databaseToken of Object.values(tokens)) {
         const refresh_token = decrypt(databaseToken.refresh_token);
