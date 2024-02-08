@@ -1,5 +1,5 @@
 import OAuthClient from 'intuit-oauth';
-import { deleteItem, readItems, updateItem } from '@directus/sdk';
+import { deleteItem, readItem, updateItem } from '@directus/sdk';
 
 type Token = {
     isCached: boolean,
@@ -67,20 +67,12 @@ export const cachedAccessTokens = defineCachedFunction(async (realmId: string): 
  */
 async function getStoredToken(realmId: string) {
     const directus = await useDirectus();
-    const storedToken = await directus.request(readItems('quickbooks_oauth',{ 
-        'filter': {
-            'realm_id': {
-                '_eq': realmId
-            }
-        },
-        'limit': 1
-    })).then((res) => {
-        const token = res[0];
-        token.refresh_token = decrypt(token.refresh_token);
 
-        return token
-    });
-
+    const storedToken = await directus.request(readItem('quickbooks_oauth', realmId))
+        .then((token) => {
+            token.refresh_token = decrypt(token.refresh_token);
+            return token
+        });
     if (!storedToken) return null;
 
     return storedToken;
@@ -116,7 +108,7 @@ async function refreshToken(realmId: string): Promise<Token> {
     }
 
     const d = new Date();
-    directus.request(updateItem('quickbooks_oauth', storedToken.id, {
+    directus.request(updateItem('quickbooks_oauth', realmId, {
         refresh_token: encrypt(token.refresh_token),
         expires_at: new Date(d.getTime() + (token.x_refresh_token_expires_in * 1000)).toISOString()
     }));
