@@ -111,7 +111,6 @@ export class CustomerManager extends BaseManager {
         await this.init();
 
         const qbo = this.qbo;
-        const realmId = this.realmId;
 
         // We get the customer from quickbooks no matter what, webhook doesn't send anything
         const customer = await new Promise<Customer>((resolve, reject) => {
@@ -156,10 +155,10 @@ export class CustomerManager extends BaseManager {
 
         switch(operation) {
             case 'Create':
-                await this.create(databaseCustomer, realmId);
+                await this.create(databaseCustomer);
                 break;
             case 'Update':
-                await this.update(databaseCustomer, realmId);
+                await this.update(databaseCustomer);
                 break;
         }
     }
@@ -167,7 +166,7 @@ export class CustomerManager extends BaseManager {
     /**
      * Create the customer in our database
      */
-    private async create(databaseCustomer: DatabaseCustomer, realmId: string) {
+    private async create(databaseCustomer: DatabaseCustomer) {
         const directus = await useDirectus();
 
         await directus.request(createItem('customers', databaseCustomer))
@@ -176,13 +175,13 @@ export class CustomerManager extends BaseManager {
     /**
      * Update the customer in our database
      */
-    private async update(databaseCustomer: DatabaseCustomer, realmId: string) {
+    private async update(databaseCustomer: DatabaseCustomer) {
         const directus = await useDirectus();
 
         await directus.request(updateItem('customers', databaseCustomer.quickbooks_id, databaseCustomer))
             .catch((reason) => {
                 if (reason.response.status !== 403) return; // We get a 403 if the object doesn't exist
-                this.create(databaseCustomer, realmId);
+                this.create(databaseCustomer);
             })
     }
 }
