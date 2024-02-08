@@ -10,6 +10,10 @@
     "@directus/sdk": "^14.0.0",
     "intuit-oauth": "^4.0.0",
     "nitropack": "latest",
+    "node-cron": "^3.0.3",
     "node-quickbooks": "^2.0.43"
+  },
+  "devDependencies": {
+    "@types/node-cron": "^3.0.11"
   }
 }
