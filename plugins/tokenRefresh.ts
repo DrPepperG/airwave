@@ -3,6 +3,7 @@ import OAuthClient from 'intuit-oauth';
 import cron from 'node-cron';
 import { decrypt, encrypt } from '../utils/encrypt';
 
+// Every day at 12am we will query our database to update any tokens
 export default defineNitroPlugin(() => {
     cron.schedule('0 12 * * *', () => {
         refreshTokens();
@@ -35,8 +36,8 @@ async function refreshTokens() {
         redirectUri: NITRO_REDIRECT_URL
     });
 
-    for (const token of Object.values(tokens)) {
-        const refresh_token = decrypt(token.refresh_token);
+    for (const databaseToken of Object.values(tokens)) {
+        const refresh_token = decrypt(databaseToken.refresh_token);
 
         const newToken = await oauth.refreshUsingToken(refresh_token)
             .then((res) => {
@@ -44,7 +45,7 @@ async function refreshTokens() {
             })
         
         const d = new Date();
-        directus.request(updateItem('quickbooks_oauth', token.realm_id, {
+        directus.request(updateItem('quickbooks_oauth', databaseToken.realm_id, {
             refresh_token: encrypt(newToken.refresh_token),
             expires_at: new Date(d.getTime() + (newToken.x_refresh_token_expires_in * 1000)).toISOString()
         }));
