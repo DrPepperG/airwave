@@ -1,7 +1,7 @@
 import * as crypto from 'node:crypto';
 
 export function encrypt(obj: string | object | number) {
-    const appKey = process.env.NITRO_APP_KEY
+    const { appKey } = useRuntimeConfig();
 
     const json = JSON.stringify(obj);
 
@@ -19,7 +19,7 @@ export function decrypt(cipherText: string) {
         return null;
     }
 
-    const appKey = process.env.NITRO_APP_KEY
+    const { appKey } = useRuntimeConfig();
 
     try {
         const iv = Buffer.from(cipherText.substring(0,32), 'hex');

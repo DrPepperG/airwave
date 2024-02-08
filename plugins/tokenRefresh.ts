@@ -16,9 +16,11 @@ export default defineNitroPlugin(() => {
  * Might as well make use of that new token for security.
  */
 async function refreshTokens() {
-    const directus = createDirectus(process.env.NITRO_DIRECTUS_URL)
+    const { clientId, clientSecret, directusUrl, directusToken, environment, redirectUri } = useRuntimeConfig();
+
+    const directus = createDirectus(directusUrl)
         .with(rest())
-        .with(staticToken(process.env.NITRO_DIRECTUS_TOKEN));
+        .with(staticToken(directusToken));
     
     const tokens = await directus.request(readItems('quickbooks_oauth'))
         .then((res) => {
@@ -27,13 +29,11 @@ async function refreshTokens() {
         .catch(console.error);
     if (!tokens) return;
 
-    const { NITRO_CLIENT_ID, NITRO_CLIENT_SECRET, NITRO_ENVIRONMENT, NITRO_REDIRECT_URL } = process.env;
-
     const oauth = new OAuthClient({
-        clientId: NITRO_CLIENT_ID,
-        clientSecret: NITRO_CLIENT_SECRET,
-        environment: NITRO_ENVIRONMENT,
-        redirectUri: NITRO_REDIRECT_URL
+        clientId,
+        clientSecret,
+        environment,
+        redirectUri
     });
 
     for (const databaseToken of Object.values(tokens)) {
