@@ -5,6 +5,8 @@ import cron from 'node-cron';
 export default defineNitroPlugin(() => {
     cron.schedule('0 12 * * *', () => {
         refreshTokens();
+    }, {
+        timezone: 'America/New_York'
     });
 });
 

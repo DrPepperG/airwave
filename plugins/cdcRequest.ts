@@ -1,43 +1,77 @@
 import { Customer, CustomerManager } from "../classes/CustomerManager";
+import { readItems } from '@directus/sdk';
+import cron from 'node-cron';
 
 export default defineNitroPlugin(() => {
-    cdcRequest();
+    cron.schedule('0 12 * * *', () => {
+        cdcRequest();
+    }, {
+        timezone: 'America/New_York'
+    });
 });
 
 async function cdcRequest() {
-    const qbo = await useQuickbooks('9130357934593106');
-
-    const queryResponse = await new Promise((resolve, reject) => {
-        qbo.changeDataCapture('Customer', "2024-02-08T22:16:44.615Z", (err, data) => {
-            if (err) return reject(err);
-            return resolve(data.CDCResponse[0].QueryResponse);
+    // Get all the realms we have active (future proofing)
+    const directus = await useDirectus();
+    const realms = await directus.request(readItems('quickbooks_oauth', {
+            fields: ['realm_id']
+        }))
+        .then((res) => {
+            return res;
         })
-    })
-    
-    const validTypes = ['Customer'];
-    for (const response of Object.values(queryResponse)) {
-        const type = Object.keys(response)
-            .filter((key) => { return validTypes.includes(key) })[0];
-        const data = response[type];
+        .catch(console.error);
+    if (!realms) return;
 
-        handleResponse(type, data)
+    for (const realm of Object.values(realms)) {
+        const qbo = await useQuickbooks(realm.realm_id);
+
+        const currentDate = new Date()
+        const yesterdayDate = new Date(currentDate.getTime() - (24 * 60 * 60 * 1000));
+
+        // Contact quickbooks for recent updates
+        const types = ['Customer'];
+        const queryResponse = await new Promise((resolve, reject) => {
+            qbo.changeDataCapture(types, yesterdayDate, (err, data) => {
+                if (err) return reject(err);
+                return resolve(data.CDCResponse[0].QueryResponse);
+            })
+        })
+        
+        for (const response of Object.values(queryResponse)) {
+            const type = Object.keys(response)
+                .filter((key) => { return types.includes(key) })[0];
+            const data = response[type];
+
+            handleResponse(type, data, realm.realm_id)
+        }
     }
 }
 
-function handleResponse(type, data) {
+function handleResponse(type, data, realmId: string) {
+    console.log(`Running CDC on ${type} entries`);
+
     switch(type) {
         case 'Customer':
-            handleCustomer(data)
+            handleCustomer(data, realmId)
             break;
     }
 }
 
-async function handleCustomer(data) {
+async function handleCustomer(data, realmId: string) {
     for (const key in data) {
         const customer: Customer = data[key];
         const databaseCustomer = await new CustomerManager()
             .getDbCustomer(customer.Id);
 
-        console.log(customer.MetaData.LastUpdatedTime, databaseCustomer.date_updated);
+        const qboLastUpdated = new Date(customer.MetaData.LastUpdatedTime);
+        const databaseLastUpdated = new Date(databaseCustomer.date_updated);
+        if (qboLastUpdated <= databaseLastUpdated) {
+            console.log(`Database has up to date version of Customer id ${customer.Id}`);
+            continue;
+        }
+
+        console.log(`Database does not have recent version of Customer id ${customer.Id}, updating now`);
+        new CustomerManager(realmId)
+            .handle(customer.Id, 'Update');
     }
 }
