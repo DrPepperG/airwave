@@ -1,10 +1,11 @@
 export class BaseManager {
-    constructor(realmId: string) {
+    constructor(realmId?: string) {
         this.realmId = realmId;
 
     }
 
     public async init() {
+        if (!this.realmId) return;
         this.qbo = await useQuickbooks(this.realmId);
     }
 

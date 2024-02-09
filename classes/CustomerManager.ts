@@ -1,9 +1,9 @@
 import type { OperationType } from '../routes/webhook.post';
 import { BaseManager } from "./BaseManager";
-import { createItem, updateItem } from '@directus/sdk';
+import { createItem, readItem, updateItem } from '@directus/sdk';
 
 // #region Types
-type Customer = {
+export type Customer = {
     Active: boolean,
     AlternatePhone?: {
         FreeFormNumber: string,
@@ -99,26 +99,19 @@ type DatabaseCustomer = {
     ship_state: string,
     // Sales tax
     sales_tax_id: string,
+    // Updated date
+    date_created?: string,
+    date_updated?: string,
 }
 // #endregion
 
 export class CustomerManager extends BaseManager {
-    constructor(realmId: string) {
+    constructor(realmId?: string) {
         super(realmId)
     }
 
     public async handle(customerId: string, operation: OperationType) {
-        await this.init();
-
-        const qbo = this.qbo;
-
-        // We get the customer from quickbooks no matter what, webhook doesn't send anything
-        const customer = await new Promise<Customer>((resolve, reject) => {
-            qbo.getCustomer(customerId, (err, customer: Customer) => {
-                if (err) return reject(err);
-                return resolve(customer);
-            })
-        }).catch(console.error);
+        const customer = await this.getQbCustomer(customerId)
         if (!customer) return;
 
         const databaseCustomer: DatabaseCustomer = {
@@ -161,6 +154,42 @@ export class CustomerManager extends BaseManager {
                 await this.update(databaseCustomer);
                 break;
         }
+    }
+
+    /**
+     * Get the customer from quickbooks online database
+     * @returns Quickbooks Customer
+     */
+    public async getQbCustomer(customerId: string): Promise<Customer | null> {
+        await this.init();
+        const qbo = this.qbo;
+
+        const customer = await new Promise<Customer>((resolve, reject) => {
+            qbo.getCustomer(customerId, (err, customer: Customer) => {
+                if (err) return reject(err);
+                return resolve(customer);
+            })
+        }).catch(console.error);
+        if (!customer) return null;
+
+        return customer;
+    }
+
+    /**
+     * Get the customer from local database
+     * @param customerId Quickbooks customer id
+     * @returns Database Customer
+     */
+    public async getDbCustomer(customerId: string): Promise<DatabaseCustomer | null> {
+        await this.init();
+
+        const directus = await useDirectus();
+        const customer = await directus.request(readItem('customers', customerId))
+            .catch(() => {
+                return null
+            }) as DatabaseCustomer
+
+        return customer
     }
 
     /**
