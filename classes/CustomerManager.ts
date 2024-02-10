@@ -131,17 +131,17 @@ export class CustomerManager extends BaseManager {
             alt_phone: customer.AlternatePhone ? customer.AlternatePhone.FreeFormNumber : null,
             mobile_phone: customer.Mobile ? customer.Mobile.FreeFormNumber : null,
             // Address
-            bill_address_line1: customer.BillAddr.Line1,
-            bill_address_line2: customer.BillAddr.Line2,
-            bill_city: customer.BillAddr.City,
-            bill_zipcode: customer.BillAddr.PostalCode,
-            bill_state: customer.BillAddr.CountrySubDivisionCode,
+            bill_address_line1: customer.BillAddr ? customer.BillAddr.Line1 : null,
+            bill_address_line2: customer.BillAddr ? customer.BillAddr.Line2 : null,
+            bill_city: customer.BillAddr ? customer.BillAddr.City : null,
+            bill_zipcode: customer.BillAddr ? customer.BillAddr.PostalCode : null,
+            bill_state: customer.BillAddr ? customer.BillAddr.CountrySubDivisionCode : null,
             // Shipping address
-            ship_address_line1: customer.BillAddr.Line1,
-            ship_address_line2: customer.BillAddr.Line2,
-            ship_city: customer.BillAddr.City,
-            ship_zipcode: customer.BillAddr.PostalCode,
-            ship_state: customer.BillAddr.CountrySubDivisionCode,
+            ship_address_line1: customer.ShipAddr ? customer.ShipAddr.Line1 : null,
+            ship_address_line2: customer.ShipAddr ? customer.ShipAddr.Line2 : null,
+            ship_city: customer.ShipAddr ? customer.ShipAddr.City : null,
+            ship_zipcode: customer.ShipAddr ? customer.ShipAddr.PostalCode : null,
+            ship_state: customer.ShipAddr ? customer.ShipAddr.CountrySubDivisionCode : null,
             // Sales tax,
             sales_tax_id: customer.DefaultTaxCodeRef ? customer.DefaultTaxCodeRef.value : null
         }
