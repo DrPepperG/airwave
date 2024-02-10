@@ -3,7 +3,7 @@ import { readItems } from '@directus/sdk';
 import cron from 'node-cron';
 
 export default defineNitroPlugin(() => {
-    cron.schedule('0 12 * * *', () => {
+    cron.schedule('0 0 * * *', () => {
         cdcRequest();
     }, {
         timezone: 'America/New_York'

@@ -3,7 +3,7 @@ import cron from 'node-cron';
 
 // Every day at 12am we will query our database to update any tokens
 export default defineNitroPlugin(() => {
-    cron.schedule('0 12 * * *', () => {
+    cron.schedule('0 0 * * *', () => {
         refreshTokens();
     }, {
         timezone: 'America/New_York'
