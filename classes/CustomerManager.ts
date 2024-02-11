@@ -153,6 +153,9 @@ export class CustomerManager extends BaseManager {
             case 'Update':
                 await this.update(databaseCustomer);
                 break;
+            case 'Merge':
+                await this.update(databaseCustomer);
+                break;
         }
     }
 

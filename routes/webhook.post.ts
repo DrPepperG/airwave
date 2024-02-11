@@ -41,7 +41,7 @@ export type WebhookEntity = {
     id: string,
     operation: OperationType,
     lastUpdated: string,
-    deletedID?: string
+    deletedId?: string
 }
 
 export type EventNotification = {
@@ -92,6 +92,11 @@ async function handleWebhook(event: H3Event<EventHandlerRequest>, notification: 
     for (const entity of Object.values(entities)) {
         switch(entity.name) {
             case 'Customer':
+                // Also update the deleted customer if we merge
+                if (entity.operation === 'Merge') {
+                    new CustomerManager(realmId)
+                        .handle(entity.deletedId, entity.operation)
+                }
                 new CustomerManager(realmId)
                     .handle(entity.id, entity.operation)
                 break;
