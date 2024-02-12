@@ -99,6 +99,8 @@ type DatabaseCustomer = {
     ship_state: string,
     // Sales tax
     sales_tax_id: string,
+    // Sync
+    sync_token: string,
     // Updated date
     date_created?: string,
     date_updated?: string,
@@ -143,7 +145,9 @@ export class CustomerManager extends BaseManager {
             ship_zipcode: customer.ShipAddr ? customer.ShipAddr.PostalCode : null,
             ship_state: customer.ShipAddr ? customer.ShipAddr.CountrySubDivisionCode : null,
             // Sales tax,
-            sales_tax_id: customer.DefaultTaxCodeRef ? customer.DefaultTaxCodeRef.value : null
+            sales_tax_id: customer.DefaultTaxCodeRef ? customer.DefaultTaxCodeRef.value : null,
+            // Sync
+            sync_token: customer.SyncToken
         }
 
         switch(operation) {

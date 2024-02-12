@@ -7,7 +7,7 @@ export default defineNitroPlugin(() => {
 
     if (environment === 'production') {
         console.log('Service started, asking for any data changes within last 24 hours.')
-        cdcRequest(true);
+        cdcRequest();
     }
 
     cron.schedule('0 0 * * *', () => {
@@ -17,7 +17,7 @@ export default defineNitroPlugin(() => {
     });
 });
 
-async function cdcRequest(forceUpdate = false) {
+async function cdcRequest() {
     // Get all the realms we have active (future proofing)
     const directus = await useDirectus();
     const realms = await directus.request(readItems('quickbooks_oauth', {
@@ -51,12 +51,12 @@ async function cdcRequest(forceUpdate = false) {
             const data = response[type];
             if (!type || !data) return;
 
-            handleResponse(type, data, realm.realm_id, forceUpdate)
+            handleResponse(type, data, realm.realm_id)
         }
     }
 }
 
-function handleResponse(type, data, realmId: string, forceUpdate: boolean) {
+function handleResponse(type, data, realmId: string) {
     console.log(`Running CDC on ${type} entries`);
 
     // Create a chunk so we don't spam the intuit API on large change requests
@@ -74,14 +74,14 @@ function handleResponse(type, data, realmId: string, forceUpdate: boolean) {
 
             switch(type) {
                 case 'Customer':
-                    handleCustomer(chunk, realmId, forceUpdate)
+                    handleCustomer(chunk, realmId)
                     break;
             }
         }, index * 10000);
     });
 }
 
-async function handleCustomer(data, realmId: string, forceUpdate: boolean) {
+async function handleCustomer(data, realmId: string) {
     for (const key in data) {
         const customer: Customer = data[key];
         const databaseCustomer = await new CustomerManager()
@@ -89,7 +89,8 @@ async function handleCustomer(data, realmId: string, forceUpdate: boolean) {
 
         const qboLastUpdated = new Date(customer.MetaData.LastUpdatedTime);
         const databaseLastUpdated = new Date(databaseCustomer.date_updated);
-        if (!forceUpdate && (qboLastUpdated <= databaseLastUpdated)) {
+
+        if ((qboLastUpdated <= databaseLastUpdated) && (customer.SyncToken == databaseCustomer.sync_token)) {
             console.log(`Database has up to date version of Customer id ${customer.Id}`);
             continue;
         }
