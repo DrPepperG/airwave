@@ -7,7 +7,7 @@ export default defineNitroPlugin(() => {
 
     if (environment === 'production') {
         console.log('Service started, asking for any data changes within last 24 hours.')
-        cdcRequest();
+        cdcRequest(true);
     }
 
     cron.schedule('0 0 * * *', () => {
@@ -17,7 +17,7 @@ export default defineNitroPlugin(() => {
     });
 });
 
-async function cdcRequest() {
+async function cdcRequest(forceUpdate = false) {
     // Get all the realms we have active (future proofing)
     const directus = await useDirectus();
     const realms = await directus.request(readItems('quickbooks_oauth', {
@@ -51,22 +51,22 @@ async function cdcRequest() {
             const data = response[type];
             if (!type || !data) return;
 
-            handleResponse(type, data, realm.realm_id)
+            handleResponse(type, data, realm.realm_id, forceUpdate)
         }
     }
 }
 
-function handleResponse(type, data, realmId: string) {
+function handleResponse(type, data, realmId: string, forceUpdate: boolean) {
     console.log(`Running CDC on ${type} entries`);
 
     switch(type) {
         case 'Customer':
-            handleCustomer(data, realmId)
+            handleCustomer(data, realmId, forceUpdate)
             break;
     }
 }
 
-async function handleCustomer(data, realmId: string) {
+async function handleCustomer(data, realmId: string, forceUpdate: boolean) {
     for (const key in data) {
         const customer: Customer = data[key];
         const databaseCustomer = await new CustomerManager()
@@ -74,7 +74,7 @@ async function handleCustomer(data, realmId: string) {
 
         const qboLastUpdated = new Date(customer.MetaData.LastUpdatedTime);
         const databaseLastUpdated = new Date(databaseCustomer.date_updated);
-        if (qboLastUpdated <= databaseLastUpdated) {
+        if (!forceUpdate && (qboLastUpdated <= databaseLastUpdated)) {
             console.log(`Database has up to date version of Customer id ${customer.Id}`);
             continue;
         }
