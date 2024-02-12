@@ -36,6 +36,7 @@ async function cdcRequest() {
                 return resolve(data.CDCResponse[0].QueryResponse);
             })
         })
+        if (!queryResponse) return;
         
         for (const response of Object.values(queryResponse)) {
             const type = Object.keys(response)
