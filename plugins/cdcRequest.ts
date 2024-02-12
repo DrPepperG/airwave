@@ -3,6 +3,13 @@ import { readItems } from '@directus/sdk';
 import cron from 'node-cron';
 
 export default defineNitroPlugin(() => {
+    const { environment } = useRuntimeConfig();
+
+    if (environment === 'production') {
+        console.log('Service started, asking for any data changes within last 24 hours.')
+        cdcRequest();
+    }
+
     cron.schedule('0 0 * * *', () => {
         cdcRequest();
     }, {
@@ -42,6 +49,7 @@ async function cdcRequest() {
             const type = Object.keys(response)
                 .filter((key) => { return types.includes(key) })[0];
             const data = response[type];
+            if (!type || !data) return;
 
             handleResponse(type, data, realm.realm_id)
         }
