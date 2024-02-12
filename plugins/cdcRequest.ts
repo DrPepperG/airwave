@@ -59,11 +59,26 @@ async function cdcRequest(forceUpdate = false) {
 function handleResponse(type, data, realmId: string, forceUpdate: boolean) {
     console.log(`Running CDC on ${type} entries`);
 
-    switch(type) {
-        case 'Customer':
-            handleCustomer(data, realmId, forceUpdate)
-            break;
+    // Create a chunk so we don't spam the intuit API on large change requests
+    const chunks = [];
+    const chunkSize = 10;
+    for (let i = 0; i < data.length; i += chunkSize) {
+        const chunk = data.slice(i, i + chunkSize);
+        chunks.push(chunk);
     }
+
+    chunks.forEach((chunk, index) => {
+        console.log(`Setup chunk on index ${index}`);
+        setTimeout(() => {
+            console.log(`Running chunk on index ${index}`);
+
+            switch(type) {
+                case 'Customer':
+                    handleCustomer(chunk, realmId, forceUpdate)
+                    break;
+            }
+        }, index * 10000);
+    });
 }
 
 async function handleCustomer(data, realmId: string, forceUpdate: boolean) {
