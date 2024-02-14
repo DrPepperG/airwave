@@ -1,5 +1,5 @@
 # Airwave
-This project aims to provide a sync between a ![Directus](https://directus.io) managed database and ![Quickbooks Online](https://quickbooks.intuit.com/). Most offerings cost way too much or are severly bloated from terrible programming.
+This project aims to provide a sync between a [Directus](https://directus.io) managed database and [Quickbooks Online](https://quickbooks.intuit.com/). Most offerings cost way too much or are severly bloated from terrible programming.
 
 # Features
 - Encryption of stored tokens
