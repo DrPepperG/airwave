@@ -92,6 +92,7 @@ async function handleWebhook(event: H3Event<EventHandlerRequest>, notification: 
     for (const entity of Object.values(entities)) {
         switch(entity.name) {
             case 'Customer':
+                console.log(`Received webhook for customerId ${entity.id}`)
                 // Also update the deleted customer if we merge
                 if (entity.operation === 'Merge') {
                     new CustomerManager(realmId)

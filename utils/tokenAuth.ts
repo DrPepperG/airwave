@@ -16,16 +16,27 @@ type Token = {
 export async function useAuthToken(realmId: string): Promise<Token> {
     if (!realmId) return null;
 
-    const token = await cachedAccessTokens(realmId);
+    const token = await cachedAccessTokens(realmId)
+        .then(async (token) => {
+            if (!token || !token.createdAt) {
+                console.log('no token')
+                // If our cached token is not working correctly then get a fresh one
+                return await refreshToken(realmId);
+            }
+            return token
+        })
+        .catch(console.error);
+    if (!token) return;
+
     const expiry = token.createdAt + (token.expires_in * 1000);
     const isValid = ((expiry - token.latency) > Date.now());
 
     // Cache should expire before it becomes invalid but just incase
     if (!isValid) {
-        const refreshedToken = await refreshToken(realmId) 
+        const refreshedToken = await refreshToken(realmId);
         return refreshedToken;
     }
-    return token
+    return token;
 }
 
 export async function useOAuth(realmId?: string) {
@@ -51,6 +62,8 @@ export const cachedAccessTokens = defineCachedFunction(async (realmId: string): 
     if (!token) {
         return null;
     }
+
+    console.log(`Refreshed cachedToken for realm ${realmId}`);
 
     token.isCached = true;
     return token;
@@ -100,7 +113,9 @@ async function refreshToken(realmId: string): Promise<Token> {
             if (err.error !== 'invalid_grant') {
                 console.error(err);
                 return;
-            }; 
+            };
+
+            console.log(err, realmId);
 
             // Delete invalid oauth token from database
             await directus.request(deleteItem('quickbooks_oauth', realmId));

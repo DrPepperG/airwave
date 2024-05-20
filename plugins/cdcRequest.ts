@@ -87,10 +87,7 @@ async function handleCustomer(data, realmId: string) {
         const databaseCustomer = await new CustomerManager()
             .getDbCustomer(customer.Id);
 
-        const qboLastUpdated = new Date(customer.MetaData.LastUpdatedTime);
-        const databaseLastUpdated = new Date(databaseCustomer.date_updated);
-
-        if ((qboLastUpdated <= databaseLastUpdated) && (customer.SyncToken == databaseCustomer.sync_token)) {
+        if (customer.SyncToken == databaseCustomer.sync_token) {
             console.log(`Database has up to date version of Customer id ${customer.Id}`);
             continue;
         }

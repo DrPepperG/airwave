@@ -15,7 +15,7 @@ export default eventHandler(async (event) => {
 
     return client.createToken(query)
         .then((res) => {
-            storeToken(realmId, res.getJson())
+            storeToken(realmId, res.json)
             return sendRedirect(event, mainRedirect);
         })
         .catch((err) => {
