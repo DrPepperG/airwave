@@ -3,61 +3,26 @@ import { VerifySignature } from "../classes/VerifySignature"
 import { CustomerManager } from '../classes/CustomerManager';
 
 // #region Types
-type WebhookType =
-  | "Account"
-  | "BillPayment"
-  | "Class"
-  | "Customer"
-  | "Employee"
-  | "Estimate"
-  | "Invoice"
-  | "Item"
-  | "Payment"
-  | "Purchase"
-  | "SalesReciept"
-  | "Vendor"
-  | "Bill"
-  | "CreditMemo"
-  | "RefundReceipt"
-  | "VendorCredit"
-  | "TimeActivity"
-  | "Department"
-  | "Deposit"
-  | "JournalEntry"
-  | "PaymentMethod"
-  | "Preferences"
-  | "PurchaseOrder"
-  | "TaxAgency"
-  | "Term"
-  | "Transfer"
-  | "Budget"
-  | "Currency"
-  | "JournalCode";
-
 export type OperationType = "Create" | "Update" | "Merge" | "Remove";
 
-export type WebhookEntity = {
-    name: WebhookType,
+export type CloudEventNotification = {
+    specversion: "1.0",
     id: string,
-    operation: OperationType,
-    lastUpdated: string,
-    deletedId?: string
-}
-
-export type EventNotification = {
-    realmId: string,
-    dataChangeEvent: {
-        entities: WebhookEntity[]
-    }
-}
-
-export type WebhookResponse = {
-    eventNotifications: EventNotification[]
+    source: string,
+    type: "qbo.customer.created.v1"
+        | "qbo.customer.deleted.v1"
+        | "qbo.customer.merged.v1"
+        | "qbo.customer.updated.v1"
+    datacontenttype: "application/json",
+    time: string,
+    intuitentityid: string,
+    intuitaccountid: string,
+    data: {}
 }
 // #endregion
 
 export default eventHandler(async (event) => {
-    const payload: WebhookResponse = await readBody(event);
+    const payload: CloudEventNotification[] = await readBody(event);
 
     // Make sure this data is coming from intuit
     const { verifyToken } = useRuntimeConfig(event);
@@ -77,33 +42,32 @@ export default eventHandler(async (event) => {
  * We can recieve multiple companies from the webhook,
  * handle that here instead of in the main func
  */
-function initWebhook(event: H3Event<EventHandlerRequest>, payload: WebhookResponse) {
-    for (const notification of Object.values(payload.eventNotifications)) {
+function initWebhook(event: H3Event<EventHandlerRequest>, payload: CloudEventNotification[]) {
+    for (const notification of Object.values(payload)) {
         handleWebhook(event, notification);
     }
 }
 
-async function handleWebhook(event: H3Event<EventHandlerRequest>, notification: EventNotification) {
-    const realmId = notification.realmId
-    const entities = notification.dataChangeEvent.entities
+async function handleWebhook(event: H3Event<EventHandlerRequest>, notification: CloudEventNotification) {
+    const realmId = notification.intuitaccountid;
+    const entityId = notification.intuitentityid;
 
-    // Need to sort ents based on date
-
-    for (const entity of Object.values(entities)) {
-        switch(entity.name) {
-            case 'Customer':
-                console.log(`Received webhook for customerId ${entity.id}`)
-                // Also update the deleted customer if we merge
-                if (entity.operation === 'Merge') {
-                    new CustomerManager(realmId)
-                        .handle(entity.deletedId, entity.operation)
-                }
-                new CustomerManager(realmId)
-                    .handle(entity.id, entity.operation)
-                break;
-            default:
-                console.log(`Unhandled webhook event`, event, notification, realmId)
-                break;
-        }
+    switch(notification.type) {
+        case 'qbo.customer.created.v1':
+            new CustomerManager(realmId)
+                .handle(entityId, 'Create');
+            break;
+        case 'qbo.customer.deleted.v1':
+            new CustomerManager(realmId)
+                .handle(entityId, 'Remove');
+        case 'qbo.customer.merged.v1':
+            new CustomerManager(realmId)
+                .handle(entityId, 'Merge');
+        case 'qbo.customer.updated.v1':
+            new CustomerManager(realmId)
+                .handle(entityId, 'Update');
+        default:
+            console.log(`Unhandled webhook event`, event, notification, realmId)
+            break;
     }
 }
