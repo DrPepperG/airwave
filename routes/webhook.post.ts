@@ -60,12 +60,15 @@ async function handleWebhook(event: H3Event<EventHandlerRequest>, notification: 
         case 'qbo.customer.deleted.v1':
             new CustomerManager(realmId)
                 .handle(entityId, 'Remove');
+            break;
         case 'qbo.customer.merged.v1':
             new CustomerManager(realmId)
                 .handle(entityId, 'Merge');
+            break;
         case 'qbo.customer.updated.v1':
             new CustomerManager(realmId)
                 .handle(entityId, 'Update');
+            break;
         default:
             console.log(`Unhandled webhook event`, event, notification, realmId)
             break;
